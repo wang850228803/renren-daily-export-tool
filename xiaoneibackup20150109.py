@@ -24,31 +24,15 @@ import gzip
 targetFile = 'articles.xml'
 #登录地址
 loginUrl = "http://passport.renren.com/PLogin.do"
-#日志列表的第一页地址
-articleUrlList = "http://blog.renren.com/MyBlog.do"
 #日志列表分页信息
 #pageReg = '当前显示1-(\d*)篇/共(\d*)篇'
 pageReg = '\d+篇'
-
-#日志URL正则表达式
-#articleUrlReg = 'http://blog.renren.com/GetEntry.do\?id=(\d+)&owner=\d+' 第一版   
-articleUrlReg = 'http://blog.renren.com/blog/\d\d+/(\d+)'
-
 
 #下一篇日志URL正则表达式
 #articleUrlNxtReg = 'http://blog.renren.com/GetPreBlog.do\?id=(\d*)&owner=\d*&time=\d*&op=pre' 第一版
 #articleUrlNxtReg='http://blog.renren.com/blog/\d+/\d+/preOrNext\?time=\d+\&op=pre' 第二版 by @laoyang945
 #articleUrlNxtReg='http://blog.renren.com/blog/\d+/\d+\?from=fanyeOld' 第三版 by ht.simple.happy@163.com
 articleUrlNxtReg='http://blog.renren.com/blog/\d+/\d+\?bfrom=\d+'
-
-#文章标题正则表达式
-titleReg = '<title>人人网 校内 - 浏览日志 - (.+)</title>'
-#时间正则表达式
-createTimeTagReg = '<span class="timestamp">(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2})'
-#内容正则表达式
-contentBegTagReg  = '<div\s+id="blogContent"[^>]*>(.*)'
-#</div><p class="stat-article">
-contentEndTagReg  = '(.*)<p\s+class="stat-article">'
 	
 def addtorss(f,name):   
     file=open(name)
@@ -99,6 +83,8 @@ def addtorss(f,name):
             print "id='blogContent' is not None"
             break
     content = line[i+2]
+
+# find the comment of the blog entry
     
                     
     xmlStr  = '\t<item>\n'
@@ -108,6 +94,7 @@ def addtorss(f,name):
     if divTagIndex > 0:
         content = content[0:divTagIndex]
     xmlStr  += '\t\t<content:encoded><![CDATA['+ content + ']]></content:encoded>\n'
+    
     xmlStr  += '\t</item>\n'
     f.write(xmlStr) 
     
@@ -152,9 +139,6 @@ def main():
     results = r.read()    
     ###################by ht.simple.happy@163.com
 
-    #personal homepage is saved as the start.html
-    open('start.html', 'w').write(results)
-    #r = urllib2.urlopen("http://blog.renren.com/MyBlog.do")   
     r = opener.open(firstPage)
     results = r.read()    
     
@@ -164,14 +148,10 @@ def main():
     results = r.read()    
     ###################by ht.simple.happy@163.com
 
-	#blog homepage is saved as the user.txt
-    open('user.txt', 'w').write(results)
-    save_file = open(targetFile,'w')
-    save_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    addtorss(save_file,'user.txt')
+    open('temp.txt', 'w').write(results)
     
 # get the whole article number
-    file = open('user.txt')
+    file = open('temp.txt')
     lines = file.readlines()
     file.close()
     article_num = 0
@@ -187,34 +167,11 @@ def main():
             
     #download the articles
 
-        
-    k = 1
-    #get the first entry
-    file = open('user.txt')
-    line = file.readlines()
-    file.close()
-    for eachLine in line:
-        #print eachLine
-        m = re.search(articleUrlReg,eachLine)
-        if m is not None:
-            strs = m.group()
-            break
-    r = urllib2.urlopen(strs)
-    results = r.read()    
-    ###################by ht.simple.happy@163.com
-    compressedstream = StringIO.StringIO(results)  
-    r = gzip.GzipFile(fileobj=compressedstream) 
-    results = r.read()    
-    ###################by ht.simple.happy@163.com
-    
-    open('temp.txt', 'w').write(results)
-    k = 1
-    print "Downloading the ", k, "th of "+ str(article_num) +" articles"
- #   save_file = open(targetFile,'w')
- #   save_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    save_file = open(targetFile,'w')
+    save_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
     addtorss(save_file,'temp.txt')
     
-    for k in range(2,article_num):
+    for k in range(2,article_num+1):
         file = open('temp.txt')
         line = file.readlines()
         file.close()
@@ -240,8 +197,6 @@ def main():
         addtorss(save_file,'temp.txt')
     save_file.close()               
 	
-    os.remove('start.html')
-    os.remove('user.txt')  
     os.remove('temp.txt') 
     
 
