@@ -41,6 +41,7 @@ def addtorss(f,name):
     title = ''
     createtime = ''
     content = ''
+    comment = ''
     findBegTag = 0
     #文章里面标题、创建时间、正文的顺序依次
     title = ''
@@ -80,13 +81,35 @@ def addtorss(f,name):
         i = i + 1
         m = re.search(data,eachLine)
         if m is not None:
-            print "id='blogContent' is not None"
             break
     content = line[i+2]
 
 # find the comment of the blog entry
-    
-                    
+    comment = ''
+    name = ''
+    data = '"comments":'
+    j = 0
+    for eachLine in line:
+        j=j+1
+        m = re.search(data,eachLine)
+        if m is not None:
+            break
+    strs = line[j-1]
+
+    start = strs.find('"name":"')
+    end = strs.find('","headUrl":"')
+    n_start = strs.find('"body":"')
+    n_end = strs.find('","likeCount"')
+
+    while (n_start != -1):
+	name = strs[start+8:end]+':'
+        comment +=name + strs[n_start+8:n_end] + '\n'
+        strs = strs[end+12:len(strs)-1]
+	start = strs.find('"name":"')
+	end = strs.find('","headUrl":"')
+        n_start = strs.find('"body":"')
+        n_end = strs.find('","likeCount"')
+
     xmlStr  = '\t<item>\n'
     xmlStr  += '\t\t<title>'+ title + '</title>\n'
     xmlStr  += '\t\t<pubdate>'+ time + '</pubdate>\n'
@@ -94,7 +117,7 @@ def addtorss(f,name):
     if divTagIndex > 0:
         content = content[0:divTagIndex]
     xmlStr  += '\t\t<content:encoded><![CDATA['+ content + ']]></content:encoded>\n'
-    
+    xmlStr  += '\t\t<comment><![CDATA['+ comment + ']]></comment>\n'
     xmlStr  += '\t</item>\n'
     f.write(xmlStr) 
     
